@@ -4,6 +4,7 @@ import { useCollection } from '../../hooks/useCollection'
 import { timestamp } from '../../firebase/config'
 import { useAuthContext } from '../../hooks/useAuthContext'
 import { useFirestore } from '../../hooks/useFirestore'
+import { useHistory } from 'react-router-dom'
 
 import './Create.css'
 
@@ -19,6 +20,7 @@ export default function Create() {
     const { documents } = useCollection('users')
     const { user } = useAuthContext()
     const { addDocument, response } = useFirestore('projects')
+    const history = useHistory()
 
     const [name, setName] = useState('')
     const [details, setDetails] = useState('')
@@ -38,20 +40,6 @@ export default function Create() {
             setUsers(options)
         }
     }, [documents])
-
-    const clearFormFields = () => {
-        setName('')
-        setDetails('')
-        setDueDate('')
-        setCategory('')
-        setAssignedUsers([])
-    }
-
-    useEffect(() => {
-        if (response.success) {
-            clearFormFields()
-        }
-    }, [response.success])
 
     const handleSubmit = async (e) => {
         e.preventDefault()
@@ -92,6 +80,9 @@ export default function Create() {
         }
 
         await addDocument(project)
+        if (!response.error) {
+            history.push('/')
+        }
         console.log(response)
     }
 
