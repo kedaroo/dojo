@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react'
 import Select from 'react-select'
 import { useCollection } from '../../hooks/useCollection'
+import { timestamp } from '../../firebase/config'
+import { useAuthContext } from '../../hooks/useAuthContext'
+import { useFirestore } from '../../hooks/useFirestore'
 
 import './Create.css'
 
@@ -14,13 +17,18 @@ const categories = [
 export default function Create() {
 
     const { documents } = useCollection('users')
+    const { user } = useAuthContext()
+    const { addDocument, response } = useFirestore('projects')
 
     const [name, setName] = useState('')
     const [details, setDetails] = useState('')
     const [dueDate, setDueDate] = useState('')
     const [category, setCategory] = useState('')
     const [assignedUsers, setAssignedUsers] = useState([])
+    const [formError, setFormError] = useState(null)
+
     const [users, setUsers] = useState([])
+    
 
     useEffect(() => {
         if (documents) {
@@ -29,13 +37,62 @@ export default function Create() {
             })
             setUsers(options)
         }
-
-        
     }, [documents])
 
-    const handleSubmit = (e) => {
+    const clearFormFields = () => {
+        setName('')
+        setDetails('')
+        setDueDate('')
+        setCategory('')
+        setAssignedUsers([])
+    }
+
+    useEffect(() => {
+        if (response.success) {
+            clearFormFields()
+        }
+    }, [response.success])
+
+    const handleSubmit = async (e) => {
         e.preventDefault()
-        console.log(name, details, dueDate, category.value, assignedUsers)
+        setFormError(null)
+
+        if (!category) {
+            setFormError('please select a project category')
+            return
+        }
+
+        if (assignedUsers.length < 1) {
+            setFormError('please assign users to the project')
+            return
+        }
+
+        const createdBy = {
+            displayName: user.displayName,
+            photoURL: user.photoURL,
+            id: user.uid
+        }
+
+        const assignedUsersList = assignedUsers.map(user => {
+            return { 
+                displayName: user.value.displayName,
+                photoURL: user.value.photoURL,
+                id: user.value.id
+            }
+        })
+
+        const project = {
+            name,
+            details,
+            category: category.value,
+            dueDate: timestamp.fromDate(new Date(dueDate)),
+            comments: [],
+            createdBy,
+            assignedUsersList
+        }
+
+        await addDocument(project)
+        console.log(response)
     }
 
     return (
@@ -73,6 +130,7 @@ export default function Create() {
                     <Select 
                         options={categories}
                         onChange={option => setCategory(option)}
+                        value={category}
                     />
                 </label>
                 
@@ -81,12 +139,13 @@ export default function Create() {
                     <Select 
                         options={users}
                         onChange={option => setAssignedUsers(option)}
+                        value={assignedUsers}
                         isMulti
                     />
                 </label>
 
                 <button className='btn'>add project</button>
-
+                {formError && <p className='error'>{formError}</p>}
             </form>
         </div>
     )
