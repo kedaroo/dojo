@@ -5,7 +5,6 @@ import ProjectComments from './ProjectComments'
 
 import './Project.css'
 
-
 export default function Project() {
 
     const { id } = useParams()

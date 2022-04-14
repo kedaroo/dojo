@@ -1,5 +1,6 @@
 import { useFirestore } from '../../hooks/useFirestore'
 import { useAuthContext } from '../../hooks/useAuthContext'
+import { useHistory } from 'react-router-dom'
 
 import Avatar from '../../components/Avatar'
 
@@ -7,9 +8,11 @@ export default function ProjectSummary({ project }) {
 
     const { deleteDocument, response } = useFirestore('projects')
     const { user } = useAuthContext()
+    const history = useHistory()
 
     const handleClick = (e) => {
         deleteDocument(project.id)
+        history.push('/')
     }
     
     const showDeleteBtn = () => {
@@ -35,8 +38,8 @@ export default function ProjectSummary({ project }) {
                         </div>
                     ))}
                 </div>
-                {showDeleteBtn() && <button className='btn' onClick={handleClick}>mark as complete</button>}        
             </div>
+            {showDeleteBtn() && <button className='btn' onClick={handleClick}>mark as complete</button>}        
         </div>
     )
 }
